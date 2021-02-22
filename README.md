@@ -4,4 +4,10 @@
 
 - 客户端用select实现，服务端用epoll实现高并发
 - 用类对客户端和服务端进行封装
-- 后续会陆续添加功能
+- 添加打印日志功能
+
+使用：
+- make server
+- make client
+- ./server
+- ./client
