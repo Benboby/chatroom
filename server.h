@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#include "log.h"
+
 // 默认服务器端IP地址
 #define SERVER_IP "127.0.0.1"
 
@@ -25,6 +27,8 @@
 const int EPOLL_SIZE = 5000;
 const int BUF_SIZE = 4096;
 const int backlog = 5;
+
+Logger logger("server.log");
 
 class Server {
 public:

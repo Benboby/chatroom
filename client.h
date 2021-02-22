@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#include "log.h"
+
 // 默认服务器端IP地址
 #define SERVER_IP "127.0.0.1"
 
@@ -18,6 +20,8 @@
 #define SERVER_PORT 8888
 
 const int BUF_SIZE = 0xFFFF;
+
+Logger logger("client.log");
 
 // 客户端类，用来连接服务器发送和接收消息
 class Client {

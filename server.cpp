@@ -26,7 +26,7 @@ void Server::addfd(int epollfd, int fd, bool enable_et)
     // 设置socket为nonblocking模式
     // 执行完就转向下一条指令，不管函数有没有返回。
     fcntl(fd, F_SETFL, fcntl(fd, F_GETFD, 0)| O_NONBLOCK);
-    std::cout << "fd added to epoll!\n\n" << std::endl;
+    logger.DEBUG("fd added to epoll!");
 }
 
 // 初始化服务端并启动监听
@@ -34,30 +34,30 @@ void Server::init() {
     //创建监听socket
     listen_fd = socket(PF_INET, SOCK_STREAM, 0);
     if (listen_fd < 0) {
-        perror("listen_fd");
+        logger.ERROR("listen_fd");
         exit(-1);
     }
 
     //绑定地址
     if (bind(listen_fd, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) {
-        perror("bind error");
+        logger.ERROR("bind error");
         exit(-1);
     }
 
     //监听
     int ret = listen(listen_fd, 5);
     if (ret < 0) {
-        perror("listen error");
+        logger.ERROR("listen error");
         exit(-1);
     }
 
-    std::cout << "Start to listen: " << SERVER_IP << std::endl;
+    logger.INFO("Start to listen: ");
 
     //在内核中创建事件表
     epfd = epoll_create(EPOLL_SIZE);
 
     if (epfd < 0) {
-        perror("epfd error");
+        logger.ERROR("epfd error");
         exit(-1);
     }
 
@@ -71,12 +71,13 @@ void Server::handle_events (int events_count) {
         int sockfd = events[i].data.fd;
         // 新用户
         if (sockfd == listen_fd) {
+            logger.INFO("new user");
             handle_accept();
         }
         // 广播
         else {
             if (!handle_broadcast(sockfd)) {
-                perror("error");
+                logger.ERROR("broadcast error");
                 close(listen_fd);
                 close(epfd);
                 exit(-1);
@@ -90,27 +91,25 @@ void Server::handle_accept() {
     socklen_t client_addrLength = sizeof(struct sockaddr_in);
     int clientfd = accept(listen_fd, (struct sockaddr *) &client_address, &client_addrLength);
 
-    std::cout << "client connection from: "
-              << inet_ntoa(client_address.sin_addr) << ":"
-              << ntohs(client_address.sin_port) << ", clientfd = "
-              << clientfd << std::endl;
+    logger.INFO("client connection from: " + std::to_string(clientfd));
 
     addfd(epfd, clientfd, true);
 
     clients_list.insert(clientfd);
-    std::cout << "Add new clientfd = " << clientfd << " to epoll" << std::endl;
-    std::cout << "Now there are " << clients_list.size() << " clients int the chat room" << std::endl;
+    logger.INFO("Add new clientfd = " + std::to_string(clientfd) + " to epoll");
+    logger.INFO("Now there are " + std::to_string(clients_list.size()) + " clients int the chat room");
 
     // 服务端发送欢迎信息
     char message[BUF_SIZE];
     memset(message, 0, BUF_SIZE);
     sprintf(message, "Welcome! Your chat ID is: Client #%d", clientfd);
     if (!send(clientfd, message, BUF_SIZE, 0)) {
-        perror("send error");
+        logger.ERROR("send error");
         close(listen_fd);
         close(epfd);
         exit(-1);
     }
+    logger.INFO(std::string (message));
 }
 
 // 发送广播消息给所有客户端
@@ -122,7 +121,7 @@ bool Server::handle_broadcast(int clientfd) {
     memset(msg, 0, BUF_SIZE);
 
     // 接收新消息
-    std::cout << "read from client(clientID = " << clientfd << ")" << std::endl;
+    logger.INFO("read from client(clientID = " + std::to_string(clientfd) + ")");
     int len = recv(clientfd, buf, BUF_SIZE, 0);
 
     // 如果客户端关闭了连接
@@ -139,12 +138,13 @@ bool Server::handle_broadcast(int clientfd) {
                 return false;
             }
         }
+        logger.INFO(std::string (msg));
     }
     // 发送广播消息给所有客户端
     else {
         // 只有一个人
         if (clients_list.size() == 1) {
-
+            logger.DEBUG("Only one people!");
             send(clientfd, CAUTION, strlen(CAUTION), 0);
             return len;
         }
@@ -155,10 +155,12 @@ bool Server::handle_broadcast(int clientfd) {
         for (auto fd : clients_list) {
             if (fd != clientfd) {
                 if (send(fd, msg, BUF_SIZE, 0) < 0) {
+                    logger.ERROR("broadcast error");
                     return false;
                 }
             }
         }
+        logger.INFO(std::string (msg));
     }
     return true;
 }
@@ -167,19 +169,21 @@ bool Server::handle_broadcast(int clientfd) {
 void Server::start_server() {
     // 服务端初始化
     init();
-
+    logger.DEBUG("init finished");
     while (true) {
         // events_count表示就绪事件的数目
         int events_count = epoll_wait(epfd, events, EPOLL_SIZE, -1);
         if (events_count < 0) {
-            perror("epoll failure");
+            logger.ERROR("epoll failure");
             break;
         }
-        std::cout << "events_count =\n" << events_count << std::endl;
+        logger.INFO("events_count = " + std::to_string(events_count));
         handle_events(events_count);
     }
     close(listen_fd);
+    logger.DEBUG("listen_fd closed");
     close(epfd);
+    logger.DEBUG("epfd closed");
 }
 
 int main() {
