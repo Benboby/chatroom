@@ -62,7 +62,7 @@ void Server::init() {
     }
 
     //往事件表里添加监听事件
-    addfd(epfd, listen_fd, true);
+    addfd(epfd, listen_fd, false);
 
 }
 
@@ -93,7 +93,7 @@ void Server::handle_accept() {
 
     logger.INFO("client connection from: " + std::to_string(clientfd));
 
-    addfd(epfd, clientfd, true);
+    addfd(epfd, clientfd, false);
 
     clients_list.insert(clientfd);
     logger.INFO("Add new clientfd = " + std::to_string(clientfd) + " to epoll");
