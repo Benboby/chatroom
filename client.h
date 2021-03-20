@@ -19,7 +19,7 @@
 // 服务器端口号
 #define SERVER_PORT 8888
 
-const int BUF_SIZE = 0xFFFF;
+const int BUF_SIZE = 4096;
 
 Logger logger("client.log");
 
