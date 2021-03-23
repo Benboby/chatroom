@@ -146,7 +146,7 @@ bool Server::handle_broadcast(int clientfd) {
             return false;
         }
             // 如果客户端关闭了连接
-        else if (ret == 0 && strlen(buf) != 0) {
+        else if (ret == 0) {
             // 关闭连接
             close(clientfd);
 
@@ -164,7 +164,7 @@ bool Server::handle_broadcast(int clientfd) {
             logger.INFO(std::string(msg));
         }
             // 发送广播消息给所有客户端
-        else if (strlen(buf) != 0){
+        else {
             // 只有一个人
             if (clients_list.size() == 1) {
                 logger.DEBUG("Only one people!");
